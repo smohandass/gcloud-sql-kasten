@@ -24,7 +24,7 @@ gcloud iam service-accounts keys create --iam-account=$CLOUD_SQL_SA@$PROJECT_ID.
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$CLOUD_SQL_SA@$PROJECT_ID.iam.gserviceaccount.com --role roles/cloudsql.admin
 ```
 
-Run a quick test to ensure the service account works as expected. The command list the current backups that exist for the specified SQL instance.
+Run a quick test to ensure the service account works as expected. The command lists the current backups that exist for the specified SQL instance.
 
 ```
 gcloud config set project $PROJECT_ID
@@ -32,7 +32,7 @@ gcloud auth activate-service-account --key-file=$CLOUD_SQL_SA-sa-key.json
 gcloud sql backups list --instance ${INSTANCE_NAME}
 ```
 
-2. Create a secret on the application namespace that holds the service account authentication json, Cloud SQL instance to be protected and the project id.
+2. Create a secret on the application namespace that holds the details of the service account authentication json, Cloud SQL instance and the project id.
 
 In this example, I set the application namespace to `gcloud-sql`
 ```
@@ -99,7 +99,7 @@ gsutil ls gs://${BUCKET_NAME}
 gsutil rm -r gs://${BUCKET_NAME}/testaccess.txt
 ```
 
-3. Create a secret on the application namespace that holds the service account authentication json, Cloud SQL instance to be protected, bucket name and the project id.
+3. Create a secret on the application namespace that holds the service account authentication json, Cloud SQL instance , bucket name and the project id.
 
 In this example, I set the application namespace to `gcloud-sql`
 
