@@ -9,7 +9,7 @@ Cloud SQL supports performing on-demand managed backups as well database exports
 
 ## Method 1 : On-demand Managed Backups
 
-Though Cloud SQL supports automated backups, on-demand backups are always useful if you don't want to wait for the backup window. It is extremely useful on scenarios where you would like to capture the state of the instance before applying a change. On-demand backups are not deleted using the set retention policies making it ideal to manage it's lifecycle using Kasten.  
+Cloud SQL supports automated backups, however on-demand backups are helpful if you don't want to wait for the backup window. It's also useful when you want to capture the state of the instance before applying a change. On-demand backups are not deleted using the set retention policies making it ideal to manage it's lifecycle using Kasten.  
 
 1. Create a google service account and grant the required IAM roles to operate on the Cloud SQL instance.
 
