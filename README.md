@@ -14,9 +14,9 @@ Though Cloud SQL supports automated backups, on-demand backups are always useful
 1. Create a google service account and grant the required IAM roles to operate on the Cloud SQL instance.
 
 ```
-PROJECT_ID="rich-access-174020"
+PROJECT_ID="DrwPQGLvdNxe"
 CLOUD_SQL_SA="cloudsqlmanager"
-INSTANCE_NAME="k10sqlinst"
+INSTANCE_NAME="k10testinst"
 
 gcloud config set project $PROJECT_ID
 gcloud iam service-accounts create $CLOUD_SQL_SA --display-name="Service Account for Cloud SQL Data Protection"
@@ -59,10 +59,10 @@ Even though Cloud SQL on-demand backups are not deleted based on the retention p
 1. Create a Google service account and grant the required IAM roles to operate on the Cloud SQL instance and the Google storage bucket.
 
 ```
-PROJECT_ID="rich-access-174020"
+PROJECT_ID="DrwPQGLvdNxe"
 CLOUD_SQL_SA="cloudsqlmanager"
-INSTANCE_NAME="k10sqlinst"
-BUCKET_NAME="cloudsql-sm-backup"
+INSTANCE_NAME="k10testinst"
+BUCKET_NAME="cloudsql-backup"
 
 gcloud config set project $PROJECT_ID
 gcloud iam service-accounts create $CLOUD_SQL_SA --display-name="Service Account for Cloud SQL Data Protection"
