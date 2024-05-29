@@ -1,0 +1,130 @@
+apiVersion: cr.kanister.io/v1alpha1
+kind: Blueprint
+metadata:
+  name: gcloud-sql-backup-bp 
+  namespace: kanister
+actions:
+  backup:
+    outputArtifacts:
+      backupInfo:
+        keyValue:
+          backup_id: "{{ .Phases.gcloudBackup.Output.backup_id }}"
+    phases:
+    - func: KubeTask
+      name: gcloudBackup  
+      args:
+        image: bullseie/gcloud-kanister-tools:1.0.0 
+        command:
+          - /bin/bash
+          - -o
+          - errexit
+          - -o
+          - pipefail
+          - -c
+          - |
+            # parse the variables
+            instance_name='{{ index .Object.data "instance_name" | toString | b64dec }}'
+            project_id='{{ index .Object.data "project_id" | toString | b64dec }}'
+            sa_key_json='{{ index .Object.data "json-file" | toString }}'
+            echo $sa_key_json | base64 -d > /tmp/cloudsqlmanager-sa-key.json
+
+            # authenticate to gcloud
+            gcloud auth activate-service-account --key-file=/tmp/cloudsqlmanager-sa-key.json --quiet
+            gcloud config set project ${project_id} --quiet
+
+            # Validate if the specified cloud sql instance id is running
+            instance_state=`gcloud sql instances describe ${instance_name} | grep state | awk '{print $2}'`
+            if [ ${instance_state} != 'RUNNABLE' ]; then
+              echo "Error: The specified instance is not in a Runnable state"
+              exit 1
+            else
+              echo "Cloud SQL instance ${instance_name} is in Running state"
+            fi
+
+            # create gcloud sql backups
+            gcloud sql backups create --instance=${instance_name}
+            backup_id=`gcloud sql backups list --instance ${instance_name} | awk '{print $1}' | sed -n '2 p'`
+            backup_status=`gcloud sql backups describe ${backup_id} --instance ${instance_name} | grep status | awk '{print $2}'`
+            if [ ${backup_status} != 'SUCCESSFUL' ]; then
+               echo "backup of sql instance ${instance_name} failed ..."
+               exit 1
+            fi
+            kando output backup_id ${backup_id}
+
+  restore:
+    inputArtifactNames:
+    - backupInfo 
+    phases:
+    - func: KubeTask
+      name: gcloudRestore
+      args:
+        image: bullseie/gcloud-kanister-tools:1.0.0
+        command:
+          - /bin/bash
+          - -o
+          - errexit
+          - -o
+          - pipefail
+          - -c
+          - |
+            # parse the variables
+            instance_name='{{ index .Object.data "instance_name" | toString | b64dec }}'
+            project_id='{{ index .Object.data "project_id" | toString | b64dec }}'
+            sa_key_json='{{ index .Object.data "json-file" | toString }}'
+            echo $sa_key_json | base64 -d > /tmp/cloudsqlmanager-sa-key.json
+            
+            # authenticate to gcloud
+            gcloud auth activate-service-account --key-file=/tmp/cloudsqlmanager-sa-key.json --quiet
+            gcloud config set project ${project_id} --quiet
+
+            # Validate if the specified cloud sql instance id is running
+            instance_state=`gcloud sql instances describe ${instance_name} | grep state | awk '{print $2}'`
+            if [ ${instance_state} != 'RUNNABLE' ]; then
+              echo "Error: The specified instance is not in a Runnable state"
+              exit 1
+            else
+              echo "Cloud SQL instance ${instance_name} is in Running state"
+            fi
+            
+            # restore backups
+            backup_id="{{ .ArtifactsIn.backupInfo.KeyValue.backup_id }}"
+            gcloud sql backups restore ${backup_id} --restore-instance=${instance_name} --backup-instance=${instance_name}
+
+  delete:
+    inputArtifactNames:
+    - backupInfo
+    phases:
+    - func: KubeTask
+      name: gcloudDelete
+      args:
+        image: bullseie/gcloud-kanister-tools:1.0.0
+        command:
+          - /bin/bash
+          - -o
+          - errexit
+          - -o
+          - pipefail
+          - -c
+          - |
+            # parse the variables
+            instance_name='{{ index .Object.data "instance_name" | toString | b64dec }}'
+            project_id='{{ index .Object.data "project_id" | toString | b64dec }}'
+            sa_key_json='{{ index .Object.data "json-file" | toString }}'
+            echo $sa_key_json | base64 -d > /tmp/cloudsqlmanager-sa-key.json
+
+            # authenticate to gcloud
+            gcloud auth activate-service-account --key-file=/tmp/cloudsqlmanager-sa-key.json --quiet
+            gcloud config set project ${project_id} --quiet
+
+            # Validate if the specified cloud sql instance id is running
+            instance_state=`gcloud sql instances describe ${instance_name} | grep state | awk '{print $2}'`
+            if [ ${instance_state} != 'RUNNABLE' ]; then
+              echo "Error: The specified instance is not in a Runnable state"
+              exit 1
+            else
+              echo "Cloud SQL instance ${instance_name} is in Running state"
+            fi
+
+            # delete the gcloud sql backup
+            backup_id="{{ .ArtifactsIn.backupInfo.KeyValue.backup_id }}"
+            gcloud beta sql backups delete ${backup_id} --instance ${instance_name} 
